@@ -1,0 +1,26 @@
+#cloud-config
+
+package_upgrade: true
+package_update: true
+packages:
+  - virtualbox
+
+write_files:
+  - path: /etc/vbox/networks.conf
+    content: |
+      * 0.0.0.0/0 ::/0
+    owner: root:root
+    permissions: '0644'
+
+runcmd:
+  - mkdir -p /etc/vbox
+  - result=$(uname -r)
+  - echo "Installing Linux headers for kernel $result"
+  - apt-get install -y linux-headers-$result
+  - echo "Reconfiguring VirtualBox DKMS"
+  - dpkg-reconfigure virtualbox-dkms
+  - echo "Reconfiguring VirtualBox"
+  - dpkg-reconfigure virtualbox
+  - wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+  - echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list
+  - apt-get update && apt-get install -y vagrant
